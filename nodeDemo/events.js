@@ -5,5 +5,7 @@ const events = require('events');
 const myEmitter = events.EventEmitter();
 
 // 注册事件
-myEmitter
+myEmitter.on('myEvent', () =>{
+    console.log('注册事件')
+})
 console.log(events)
