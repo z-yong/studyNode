@@ -1,0 +1,3711 @@
+<h3>Buffer（缓冲器）</h3>
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}Buffer（缓冲器）
+
+Buffer 与字符编码
+Buffers and TypedArrays
+Buffer 与迭代器
+Buffer 类
+
+Buffer.alloc(size[, fill[, encoding]])
+Buffer.allocUnsafe(size)
+Buffer.allocUnsafeSlow(size)
+Buffer.byteLength(string[, encoding])
+Buffer.compare(buf1, buf2)
+Buffer.concat(list[, totalLength])
+Buffer.from(array)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(buffer)
+Buffer.from(object[, offsetOrEncoding[, length]])
+Buffer.from(string[, encoding])
+Buffer.isBuffer(obj)
+Buffer.isEncoding(encoding)
+Buffer.poolSize
+buf[index]
+buf.buffer
+buf.byteOffset
+buf.compare(target[, targetStart[, targetEnd[, sourceStart[, sourceEnd]]]])
+buf.copy(target[, targetStart[, sourceStart[, sourceEnd]]])
+buf.entries()
+buf.equals(otherBuffer)
+buf.fill(value[, offset[, end]][, encoding])
+buf.includes(value[, byteOffset][, encoding])
+buf.indexOf(value[, byteOffset][, encoding])
+buf.keys()
+buf.lastIndexOf(value[, byteOffset][, encoding])
+buf.length
+buf.parent
+buf.readBigInt64BE([offset])
+buf.readBigInt64LE([offset])
+buf.readBigUInt64BE([offset])
+buf.readBigUInt64LE([offset])
+buf.readDoubleBE([offset])
+buf.readDoubleLE([offset])
+buf.readFloatBE([offset])
+buf.readFloatLE([offset])
+buf.readInt8([offset])
+buf.readInt16BE([offset])
+buf.readInt16LE([offset])
+buf.readInt32BE([offset])
+buf.readInt32LE([offset])
+buf.readIntBE(offset, byteLength)
+buf.readIntLE(offset, byteLength)
+buf.readUInt8([offset])
+buf.readUInt16BE([offset])
+buf.readUInt16LE([offset])
+buf.readUInt32BE([offset])
+buf.readUInt32LE([offset])
+buf.readUIntBE(offset, byteLength)
+buf.readUIntLE(offset, byteLength)
+buf.subarray([start[, end]])
+buf.slice([start[, end]])
+buf.swap16()
+buf.swap32()
+buf.swap64()
+buf.toJSON()
+buf.toString([encoding[, start[, end]]])
+buf.values()
+buf.write(string[, offset[, length]][, encoding])
+buf.writeBigInt64BE(value[, offset])
+buf.writeBigInt64LE(value[, offset])
+buf.writeBigUInt64BE(value[, offset])
+buf.writeBigUInt64LE(value[, offset])
+buf.writeDoubleBE(value[, offset])
+buf.writeDoubleLE(value[, offset])
+buf.writeFloatBE(value[, offset])
+buf.writeFloatLE(value[, offset])
+buf.writeInt8(value[, offset])
+buf.writeInt16BE(value[, offset])
+buf.writeInt16LE(value[, offset])
+buf.writeInt32BE(value[, offset])
+buf.writeInt32LE(value[, offset])
+buf.writeIntBE(value, offset, byteLength)
+buf.writeIntLE(value, offset, byteLength)
+buf.writeUInt8(value[, offset])
+buf.writeUInt16BE(value[, offset])
+buf.writeUInt16LE(value[, offset])
+buf.writeUInt32BE(value[, offset])
+buf.writeUInt32LE(value[, offset])
+buf.writeUIntBE(value, offset, byteLength)
+buf.writeUIntLE(value, offset, byteLength)
+new Buffer(array)
+new Buffer(arrayBuffer[, byteOffset[, length]])
+new Buffer(buffer)
+new Buffer(size)
+new Buffer(string[, encoding])
+buffer.INSPECT_MAX_BYTES
+buffer.kMaxLength
+buffer.transcode(source, fromEnc, toEnc)
+SlowBuffer 类
+
+new SlowBuffer(size)
+Buffer 常量
+
+buffer.constants.MAX_LENGTH
+buffer.constants.MAX_STRING_LENGTH
+Buffer.from()、Buffer.alloc() 与 Buffer.allocUnsafe()
+
+--zero-fill-buffers 命令行选项
+Buffer.allocUnsafe() 与 Buffer.allocUnsafeSlow() 不安全的原因
+Buffer（缓冲器）#
+中英对照提交修改
+
+稳定性: 2 - 稳定
+在 Node.js 中， Buffer 对象用于以字节序列的形式来表示二进制数据。 许多 Node.js 的 API（例如流和文件系统操作）都支持 Buffer，因为与操作系统或其他进程的交互通常总是以二进制数据的形式发生。
+
+Buffer 类是 JavaScript 语言内置的 Uint8Array 类的子类。 支持许多涵盖其他用例的额外方法。 只要支持 Buffer 的地方，Node.js API 都可以接受普通的 Uint8Array。
+
+Buffer 类的实例，以及通常的 Uint8Array，类似于从 0 到 255 之间的整数数组，但对应于固定大小的内存块，并且不能包含任何其他值。 一个 Buffer 的大小在创建时确定，且无法更改。
+
+Buffer 类在全局作用域中，因此无需使用 require('buffer').Buffer。
+
+// 创建一个长度为 10 的 Buffer，
+// 其中填充了全部值为 `1` 的字节。
+const buf1 = Buffer.alloc(10);
+
+// 创建一个长度为 10、且用 0x1 填充的 Buffer。 
+const buf2 = Buffer.alloc(10, 1);
+
+// 创建一个长度为 10、且未初始化的 Buffer。
+// 这个方法比调用 Buffer.alloc() 更快，
+// 但返回的 Buffer 实例可能包含旧数据，
+// 因此需要使用 fill()、write() 或其他能填充 Buffer 的内容的函数进行重写。
+const buf3 = Buffer.allocUnsafe(10);
+
+// 创建一个包含字节 [1, 2, 3] 的 Buffer。
+const buf4 = Buffer.from([1, 2, 3]);
+
+// 创建一个包含字节 [1, 1, 1, 1] 的 Buffer，
+// 其中所有条目均使用 `(value & 255)` 进行截断以符合 0-255 的范围。
+const buf5 = Buffer.from([257, 257.5, -255, '1']);
+
+// 创建一个 Buffer，其中包含字符串 'tést' 的 UTF-8 编码字节：
+// [0x74, 0xc3, 0xa9, 0x73, 0x74]（以十六进制表示）
+// [116, 195, 169, 115, 116]（以十进制表示）
+const buf6 = Buffer.from('tést');
+
+// 创建一个包含 Latin-1 字节 [0x74, 0xe9, 0x73, 0x74] 的 Buffer。
+const buf7 = Buffer.from('tést', 'latin1');
+Buffer 与字符编码#
+中英对照提交修改
+
+版本历史
+当在 Buffer 和字符串之间转换时，可以指定字符编码。 如果未指定字符编码，则使用 UTF-8 作为默认值。
+
+const buf = Buffer.from('hello world', 'utf8');
+
+console.log(buf.toString('hex'));
+// 打印: 68656c6c6f20776f726c64
+console.log(buf.toString('base64'));
+// 打印: aGVsbG8gd29ybGQ=
+
+console.log(Buffer.from('fhqwhgads', 'utf8'));
+// 打印: <Buffer 66 68 71 77 68 67 61 64 73>
+console.log(Buffer.from('fhqwhgads', 'utf16le'));
+// 打印: <Buffer 66 00 68 00 71 00 77 00 68 00 67 00 61 00 64 00 73 00>
+Node.js 当前支持的字符编码如下：
+
+'utf8': 多字节编码的 Unicode 字符。 许多网页和其他文档格式都使用 UTF-8。 这是默认的字符编码。 当将 Buffer 解码为不专门包含有效 UTF-8 数据的字符串时，则会使用 Unicode 替换字符 U+FFFD � 来表示这些错误。
+
+'utf16le': 多字节编码的 Unicode 字符。 与 'utf8' 不同，字符串中的每个字符都会使用 2 个或 4 个字节进行编码。 Node.js 仅支持 UTF-16 的小端序变体。
+
+'latin1': Latin-1 代表 ISO-8859-1。 此字符编码仅支持从 U+0000 到 U+00FF 的 Unicode 字符。 每个字符使用单个字节进行编码。 超出该范围的字符会被截断，并映射成该范围内的字符。
+
+使用以上方法之一将 Buffer 转换为字符串，称为解码；将字符串转换为 Buffer，称为编码。
+
+Node.js 还支持以下两种二进制转文本的编码。 对于二进制转文本的编码，其命名约定是相反的：将 Buffer 转换为字符串通常称为编码，而将字符串转换为 Buffer 则称为解码。
+
+'base64': Base64 编码。 当从字符串创建 Buffer 时，此编码也会正确地接受 RFC 4648 第 5 节中指定的 “URL 和文件名安全字母”。
+
+'hex': 将每个字节编码成两个十六进制的字符。 当解码仅包含有效的十六进制字符的字符串时，可能会发生数据截断。 请参见下面的示例。
+
+还支持以下传统的字符编码：
+
+'ascii': 仅适用于 7 位 ASCII 数据。 当将字符串编码为 Buffer 时，这等效于使用 'latin1'。 当将 Buffer 解码为字符串时，则使用编码会在解码为 'latin1' 之前额外取消设置每个字节的最高位。 通常，当在编码或解码纯 ASCII 文本时，应该没有理由使用这种编码，因为 'utf8'（或者，如果已知的数据始终为纯 ASCII，则为 'latin1'）会是更好的选择。 这仅为传统的兼容性而提供。
+
+'binary': 'latin1' 的别名。 有关此编码的更多背景，请参阅二进制字符串。 该编码的名称可能会引起误解，因为此处列出的所有编码都是在字符串和二进制数据之间转换。 对于在字符串和 Buffer 之间进行转换，通常 'utf-8' 是正确的选择。
+
+'ucs2': 'utf16le' 的别名。 UCS-2 以前是指 UTF-16 的一种变体，该变体不支持代码点大于 U+FFFF 的字符。 在 Node.js 中，始终支持这些代码点。
+
+Buffer.from('1ag', 'hex');
+// 打印 <Buffer 1a>，当遇到第一个非十六进制的值（'g'）时，则数据会被截断。
+
+Buffer.from('1a7g', 'hex');
+// 打印 <Buffer 1a>，当数据以一个数字（'7'）结尾时，则数据会被截断。
+
+Buffer.from('1634', 'hex');
+// 打印 <Buffer 16 34>，所有数据均可用。
+现代的 Web 浏览器遵循 WHATWG 编码标准，将 'latin1' 和 'ISO-8859-1' 别名为 'win-1252'。 这意味着当执行 http.get() 之类的操作时，如果返回的字符集是 WHATWG 规范中列出的字符集之一，则服务器可能实际返回 'win-1252' 编码的数据，而使用 'latin1' 编码可能错误地解码字符。
+
+Buffers and TypedArrays#
+中英对照提交修改
+
+版本历史
+Buffer 实例也是 Uint8Array 实例，这是该语言用于处理二进制数据的内置类。 Uint8Array 依次是 TypedArray 的子类。 因此，所有 TypedArray 的方法在 Buffer 上也可用。 但是， Buffer 的 API 和 TypedArray 的 API 之间存在细微的不兼容。
+
+主要表现在：
+
+TypedArray#slice() 会创建 TypedArray 的片段的拷贝，而 Buffer#slice() 是在现有的 Buffer 上创建视图而不进行拷贝。 此行为可能产生意外，并且仅用于旧版的兼容性。 TypedArray#subarray() 可用于在 Buffer 和其他 TypedArray 上实现 Buffer#slice() 的行为。
+buf.toString() 与它在 TypedArray 上的等价物并不兼容。
+一些方法，例如 buf.indexOf()，支持额外的参数。
+有两种方法可以从一个 Buffer 创建新的 TypedArray 实例。
+
+当将一个 Buffer 传给 TypedArray 的构造函数时，该 Buffer 的元素会被拷贝且，且会被解析为一个整数数组，而不是目标类型的字节数组。 例如， new Uint32Array(Buffer.from([1, 2, 3, 4])) 会创建一个带有 4 个元素 [1, 2, 3, 4] 的 Uint32Array，而不是带有单个元素 [0x1020304] 或 [0x4030201] 的 Uint32Array。
+
+为了创建与 Buffer 共享其内存的 TypedArray，可以将底层的 ArrayBuffer 传给 TypedArray 的构造函数：
+
+const buf = Buffer.from('hello', 'utf16le');
+const uint16arr = new Uint16Array(
+  buf.buffer, buf.byteOffset, buf.length / Uint16Array.BYTES_PER_ELEMENT);
+也可以通过使用 TypedArray 对象的 .buffer 属性，以相同的方式来创建一个与 TypedArray 实例共享相同分配内存的新 Buffer。 在这种情况下，Buffer.from() 的行为类似于 new Uint8Array()。
+
+const arr = new Uint16Array(2);
+
+arr[0] = 5000;
+arr[1] = 4000;
+
+// 拷贝 `arr` 的内容。
+const buf1 = Buffer.from(arr);
+// 与 `arr` 共享内存。
+const buf2 = Buffer.from(arr.buffer);
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 a0 0f>
+
+arr[1] = 6000;
+
+console.log(buf1);
+// 打印: <Buffer 88 a0>
+console.log(buf2);
+// 打印: <Buffer 88 13 70 17>
+当使用 TypedArray 的 .buffer 创建 Buffer 时，也可以通过传入 byteOffset 和 length 参数只使用底层 ArrayBuffer 的一部分。
+
+const arr = new Uint16Array(20);
+const buf = Buffer.from(arr.buffer, 0, 16);
+
+console.log(buf.length);
+// 打印: 16
+Buffer.from() 与 TypedArray.from() 有着不同的实现。 具体来说，TypedArray 可以接受第二个参数作为映射函数，在类型数组的每个元素上调用：
+
+TypedArray.from(source[, mapFn[, thisArg]])
+Buffer.from() 方法则不支持映射函数的使用：
+
+Buffer.from(array)
+Buffer.from(buffer)
+Buffer.from(arrayBuffer[, byteOffset[, length]])
+Buffer.from(string[, encoding])
+Buffer 与迭代器#
+中英对照提交修改
+
+Buffer 实例可以使用 for..of 语法进行迭代：
+
+const buf = Buffer.from([1, 2, 3]);
+
+for (const b of buf) {
+  console.log(b);
+}
