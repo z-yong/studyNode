@@ -1,0 +1,12 @@
+{
+  "name": "express_mysql",
+  "version": "1.0.0",
+  "description": "使用node连接mysql数据库",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
