@@ -20,6 +20,9 @@ const app = express();
 // 使用ejs模板引擎
 app.set('view engine', 'ejs');
 
+// 如果想引入外部资源 比如js,css文件等 必须在入口文件中先注册
+app.use('/assets', express.static('assets'))
+
 app.get('/', (req, res) => {
     res.render('index', {title: '首页'})
 })
