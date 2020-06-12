@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <%-include('../components/nav.ejs') %>
+    <!-- 参数使用语法 -->
+    <h3>这里是<%= pageName %>页面</h3>
+    <div>
+        <ul style="margin: 10px 0;">
+            <% data.forEach(function(item){ %>
+                <li>
+                    <p>姓名:
+                        <%= item.name %>
+                    </p>
+                    <p> 年龄:
+                        <%= item.age %>
+                    </p>
+                </li>
+            <% }) %>
+        </ul>
+    </div>
+
+</body>
+
+</html>
